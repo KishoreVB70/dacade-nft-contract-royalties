@@ -35,10 +35,10 @@ contract NFT is ERC721Enumerable, Ownable {
     // Public functions
     function mint() public payable {
         uint256 supply = totalSupply();
-        require(supply <= maxSupply);
+        require(supply <= maxSupply, "max suplly reached");
 
         if (msg.sender != owner()) {
-            require(msg.value >= cost);
+            require(msg.value >= cost, "insufficient funds");
 
             // Pay royality to artist, and remaining to deployer of contract
 
@@ -52,6 +52,26 @@ contract NFT is ERC721Enumerable, Ownable {
         }
 
         _safeMint(msg.sender, supply + 1);
+    }
+
+    // Internal functions
+    function _payRoyality(uint256 _royalityFee) internal {
+        (bool success1, ) = payable(artist).call{value: _royalityFee}("");
+        require(success1);
+    }
+
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseURI;
+    }
+
+
+    // Owner functions
+    function changeBaseURI(string memory _newBaseURI) public onlyOwner {
+        baseURI = _newBaseURI;
+    }
+
+    function changeRoyalityFee(uint256 _royalityFee) public onlyOwner {
+        royalityFee = _royalityFee;
     }
 
     function tokenURI(uint256 tokenId)
@@ -150,22 +170,5 @@ contract NFT is ERC721Enumerable, Ownable {
         _safeTransfer(from, to, tokenId, _data);
     }
 
-    // Internal functions
-    function _baseURI() internal view virtual override returns (string memory) {
-        return baseURI;
-    }
 
-    function _payRoyality(uint256 _royalityFee) internal {
-        (bool success1, ) = payable(artist).call{value: _royalityFee}("");
-        require(success1);
-    }
-
-    // Owner functions
-    function setBaseURI(string memory _newBaseURI) public onlyOwner {
-        baseURI = _newBaseURI;
-    }
-
-    function setRoyalityFee(uint256 _royalityFee) public onlyOwner {
-        royalityFee = _royalityFee;
-    }
 }
